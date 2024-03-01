@@ -1,11 +1,11 @@
 // require('dotenv').config()
 import dotenv from "dotenv"
 import express from "express"
-import connectDB from "./db/index";
+import connectDB from "./db/index.js";
 
 dotenv.config({
     // we're saying env file is in our root directory
-    path: './env'
+    path: './.env'
 })
 
 
