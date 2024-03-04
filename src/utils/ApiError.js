@@ -5,7 +5,7 @@ class ApiError extends Error {
         statusCode,
         message = "Something went wrong",
         errors = [],
-        statck = ""
+        stack = ""
     ) {
         //now we can change these datas and give use this to show error messages next time
         super(message)
@@ -17,8 +17,8 @@ class ApiError extends Error {
 
         //this below is optional, understanding it is better but
 
-        if(statck){
-            this.stack = statck
+        if(stack){
+            this.stack = stack
         }
         else{
             Error.captureStackTrace(this,this.constructor)
