@@ -17,4 +17,12 @@ app.use(express.urlencoded({extended:true, limit:"16kb"}))
 
 app.use(cookieParser())
 
+//routes import
+import userRouter from './routes/user.routes.js'
+
+//we'll be using middleware to ge routes
+//routes 
+//now whenever we are on "/users", it will give control to userRouter
+app.use("/api/v1/users", userRouter)
+
 export {app}
