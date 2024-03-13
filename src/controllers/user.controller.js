@@ -1,6 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
+import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
 
@@ -53,6 +55,46 @@ if(existedUser){
    throw new ApiError(409, "User with email or username already exist")
 }
 
+// we get ".files" because of multer
+const avatarLocalPath = req.files?.avatar[0]?.path;
+const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+
+//checking
+if (!avatarLocalPath){
+throw new ApiError(400, "Avatar file is required")
+}
+const avatar = await uploadOnCloudinary(avatarLocalPath)
+const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+if (!avatar){
+   throw new ApiError(400, "Avatar file is required")
+}
+
+//create an user object and send to database
+const user = User.create({
+   fullName,
+   avatar: avatar.url,
+   // some people don't give cover image
+   coverImage: coverImage?.url || "",
+   email,
+   password,
+   username: username.toLowerCase()
+})
+
+//checking user collection
+// in select, we mean don't include/return password and refreshToken
+const  createdUser = await User.findById(user.email).select("-password -refreshToken ")
+if (!createdUser){
+   throw new ApiError(500, "Something went wrong while registering the user")
+}
+
+// Return response
+return res.status(201).json(
+//user ApiResponse for more structured way
+   new ApiResponse(200, createdUser, "User registered successfully")
+
+)
 
 })
 
