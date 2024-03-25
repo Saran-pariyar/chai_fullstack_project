@@ -5,16 +5,8 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
-
-   res.status(200).json({
-      message: "user registered"
-   })
-
-
-
    /*
    ALGORITHM FOR REGISTER USER
-   
    Steps:
    
    - Get user details from frontend
@@ -26,7 +18,6 @@ const registerUser = asyncHandler(async (req, res) => {
    - remove password and refresh token field from response
    - check for user creation
    - return response
-   
    */
 
    // we need to get data first. We get these data from request's body from the form when they send these data
@@ -45,7 +36,7 @@ const registerUser = asyncHandler(async (req, res) => {
    }
 
    //checking if user already exist
-   const existedUser = User.findOne({
+   const existedUser = await User.findOne({
       // we can use operators like this using $ sign
       // now it will return first document which matches
       $or: [{username}, {email}]
@@ -72,7 +63,7 @@ if (!avatar){
 }
 
 //create an user object and send to database
-const user = User.create({
+const user = await User.create({
    fullName,
    avatar: avatar.url,
    // some people don't give cover image
@@ -84,8 +75,10 @@ const user = User.create({
 
 //checking user collection
 // in select, we mean don't include/return password and refreshToken
-const  createdUser = await User.findById(user.email).select("-password -refreshToken ")
+const  createdUser = await User.findById(user._id).select("-password -refreshToken")
+
 if (!createdUser){
+   
    throw new ApiError(500, "Something went wrong while registering the user")
 }
 
