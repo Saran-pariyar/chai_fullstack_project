@@ -58,7 +58,7 @@ const userSchema = new Schema({
 userSchema.pre("save", async function (next) {
 
     //we check and run this only if password is modified or else it will change password hash with everytime with this middleware
-    if (this.isModified("password")) return next();
+    if (!this.isModified("password")) return next();
 
     this.password = await bcrypt.hash(this.password, 10)
 
