@@ -23,7 +23,7 @@ const registerUser = asyncHandler(async (req, res) => {
    // we need to get data first. We get these data from request's body from the form when they send these data
 
    const { fullName, email, username, password } = req.body
-   console.log("email: ", email);
+   // console.log("email: ", email);
 
    //validation
    if (
@@ -48,13 +48,21 @@ if(existedUser){
 
 // we get ".files" because of multer
 const avatarLocalPath = req.files?.avatar[0]?.path;
-const coverImageLocalPath = req.files?.coverImage[0]?.path;
+// const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+//checking coverImage exist or not
+let coverImageLocalPath;
+if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+   coverImageLocalPath = req.files.coverImage[0].path;
+}
 
 
 //checking
 if (!avatarLocalPath){
 throw new ApiError(400, "Avatar file is required")
 }
+
+// if cloudinary doesn't find an image, it will return empty string
 const avatar = await uploadOnCloudinary(avatarLocalPath)
 const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
