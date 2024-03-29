@@ -1,13 +1,13 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js"
-import {User} from "../models/user.model.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import { User } from "../models/user.model.js"
+import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 
 //creating function to generate tokens
-const generateAccessAndRefreshTokens = async(userId) =>{
-   try{
+const generateAccessAndRefreshTokens = async (userId) => {
+   try {
       const user = await User.findById(userId)
       // we get these methods from user model
       const accessToken = user.generateAccessToken()
@@ -20,12 +20,12 @@ const generateAccessAndRefreshTokens = async(userId) =>{
       // when we run save, the whole model will be retriggered, and we've put "required" in password property in model
       //to make sure it doesn't check for that when we use the save(), we make that validation check false
 
-      await user.save({validateBeforeSave: false})
+      await user.save({ validateBeforeSave: false })
 
-      return {accessToken, refreshToken}
+      return { accessToken, refreshToken }
    }
-   catch(error){
-throw new ApiError(500, "Something went wrong while generating refresh and access token")
+   catch (error) {
+      throw new ApiError(500, "Something went wrong while generating refresh and access token")
    }
 }
 
@@ -64,123 +64,123 @@ const registerUser = asyncHandler(async (req, res) => {
    const existedUser = await User.findOne({
       // we can use operators like this using $ sign
       // now it will return first document which matches
-      $or: [{username}, {email}]
+      $or: [{ username }, { email }]
    })
 
-if(existedUser){
-   throw new ApiError(409, "User with email or username already exist")
-}
+   if (existedUser) {
+      throw new ApiError(409, "User with email or username already exist")
+   }
 
-// we get ".files" because of multer
-const avatarLocalPath = req.files?.avatar[0]?.path;
-// const coverImageLocalPath = req.files?.coverImage[0]?.path;
+   // we get ".files" because of multer
+   const avatarLocalPath = req.files?.avatar[0]?.path;
+   // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
-//checking coverImage exist or not
-let coverImageLocalPath;
-if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
-   coverImageLocalPath = req.files.coverImage[0].path;
-}
+   //checking coverImage exist or not
+   let coverImageLocalPath;
+   if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+      coverImageLocalPath = req.files.coverImage[0].path;
+   }
 
 
-//checking
-if (!avatarLocalPath){
-throw new ApiError(400, "Avatar file is required")
-}
+   //checking
+   if (!avatarLocalPath) {
+      throw new ApiError(400, "Avatar file is required")
+   }
 
-// if cloudinary doesn't find an image, it will return empty string
-const avatar = await uploadOnCloudinary(avatarLocalPath)
-const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+   // if cloudinary doesn't find an image, it will return empty string
+   const avatar = await uploadOnCloudinary(avatarLocalPath)
+   const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-if (!avatar){
-   throw new ApiError(400, "Avatar file is required")
-}
+   if (!avatar) {
+      throw new ApiError(400, "Avatar file is required")
+   }
 
-//create an user object and send to database
-const user = await User.create({
-   fullName,
-   avatar: avatar.url,
-   // some people don't give cover image
-   coverImage: coverImage?.url || "",
-   email,
-   password,
-   username: username.toLowerCase()
-})
+   //create an user object and send to database
+   const user = await User.create({
+      fullName,
+      avatar: avatar.url,
+      // some people don't give cover image
+      coverImage: coverImage?.url || "",
+      email,
+      password,
+      username: username.toLowerCase()
+   })
 
-//checking user collection
-// in select, we mean don't include/return password and refreshToken
-const  createdUser = await User.findById(user._id).select("-password -refreshToken")
+   //checking user collection
+   // in select, we mean don't include/return password and refreshToken
+   const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
-if (!createdUser){
-   
-   throw new ApiError(500, "Something went wrong while registering the user")
-}
+   if (!createdUser) {
 
-// Return response
-return res.status(201).json(
-//user ApiResponse for more structured way
-   new ApiResponse(200, createdUser, "User registered successfully")
+      throw new ApiError(500, "Something went wrong while registering the user")
+   }
 
-)
+   // Return response
+   return res.status(201).json(
+      //user ApiResponse for more structured way
+      new ApiResponse(200, createdUser, "User registered successfully")
+
+   )
 
 })
 
 // login
-const loginUser = asyncHandler(async(req,res)=>{
-//steps
-// 1 get data from req.body
-// 2 check using username or email
-// 3 find the user
-// 4 password check
-// 5 generate access and refresh token
-// 6 send cookie
+const loginUser = asyncHandler(async (req, res) => {
+   //steps
+   // 1 get data from req.body
+   // 2 check using username or email
+   // 3 find the user
+   // 4 password check
+   // 5 generate access and refresh token
+   // 6 send cookie
 
 
-  // 1
-  const { email, username, password } = req.body
+   // 1
+   const { email, username, password } = req.body
 
-  // if we don't get either username or email 
-  if (!username || !email) {
-     throw new ApiError(400, "username or password is required")
-  }
+   // if we don't get either username or email 
+   if (!username || !email) {
+      throw new ApiError(400, "username or password is required")
+   }
 
-  //checking 
-  // we use $or operator given my Mongodb, now it check from username and email
-  const user = await User.findOne({
-     $or: [{ username }, { email }]
-  })
+   //checking 
+   // we use $or operator given my Mongodb, now it check from username and email
+   const user = await User.findOne({
+      $or: [{ username }, { email }]
+   })
 
-  if (!user) {
-     throw new ApiError(404, "User does not exist")
-  }
+   if (!user) {
+      throw new ApiError(404, "User does not exist")
+   }
 
-  // see the user.model.js, we've added the method to check password.
-  // we got this argument password from req.body
-  const isPasswordValid = await user.isPasswordCorrect(password)
+   // see the user.model.js, we've added the method to check password.
+   // we got this argument password from req.body
+   const isPasswordValid = await user.isPasswordCorrect(password)
 
-  if (!isPasswordValid) {
-     throw new ApiError(401, "Invalid user credentials")
-  }
+   if (!isPasswordValid) {
+      throw new ApiError(401, "Invalid user credentials")
+   }
 
-  //5. Generate tokens 
+   //5. Generate tokens 
 
-  // now finally generating token after every check it done
-  //this function will return access and refresh token, so we destructure it
-  const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
+   // now finally generating token after every check it done
+   //this function will return access and refresh token, so we destructure it
+   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
 
-  //6. sending through cookie
-  // now we decide what information to user. we'll filter out these two
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+   //6. sending through cookie
+   // now we decide what information to user. we'll filter out these two
+   const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
-  // when we send cookie, we have to design some options
-  // if we cookie httpOnly and secure true, it will only be modified through server and not from frontend
-  const options = {
-   httpOnly: true,
-   secure: true
-  }
+   // when we send cookie, we have to design some options
+   // if we cookie httpOnly and secure true, it will only be modified through server and not from frontend
+   const options = {
+      httpOnly: true,
+      secure: true
+   }
 
-  //now creating cookie and sending json response after creating cookie
-  return res.status(200)
-      .cookie("accessToken",accessToken, options)
+   //now creating cookie and sending json response after creating cookie
+   return res.status(200)
+      .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", refreshToken, options)
       .json(
          new ApiResponse(
@@ -192,36 +192,38 @@ const loginUser = asyncHandler(async(req,res)=>{
             "User logged In Successfully"
          )
       )
-   })
-
-      //logout user
-      const logoutUser = asyncHandler(async(req,res) =>{
-         await User.findByIdAndUpdate(
-            // we get this req.user from auth.middleware
-            req.user._id,
-            {
-               $set: {
-                  refreshToken: undefined
-               }
-               },
-               {
-                  //new: true in findByIdAndUpdate() ensures that the updated document is returned after the update operation is executed, rather than the original document.
-                  new: true
-            }
-         )
-      // now clearing the cookie
-         const options = {
-            httpOnly: true,
-            secure: true
-           }
-      
-           return res
-           .status(200)
-           .clearCookie("accessToken", options)
-           .clearCookie("refreshToken", options)
-           .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
-export { registerUser,
-loginUser, logoutUser }
+//logout user
+const logoutUser = asyncHandler(async (req, res) => {
+   await User.findByIdAndUpdate(
+      // we get this req.user from auth.middleware
+      req.user._id,
+      {
+         $set: {
+            refreshToken: undefined
+         }
+      },
+      {
+         //new: true in findByIdAndUpdate() ensures that the updated document is returned after the update operation is executed, rather than the original document.
+         new: true
+      }
+   )
+   // now clearing the cookie
+   const options = {
+      httpOnly: true,
+      secure: true
+   }
+
+   return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json(new ApiResponse(200, {}, "User logged Out"))
+})
+
+export {
+   registerUser,
+   loginUser, logoutUser
+}
 
