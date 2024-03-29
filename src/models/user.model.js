@@ -75,6 +75,7 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 // Access token are expired in short time 
 // Refresh token are expired in long time 
 
+// we give access token to user but we keep refresh token in database too so that we don't have to ask for password all the time to user
 userSchema.methods.generateAccessToken = function () {
 
     jwt.sign({

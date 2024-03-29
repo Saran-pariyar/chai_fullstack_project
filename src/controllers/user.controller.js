@@ -4,6 +4,31 @@ import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+
+//creating function to generate tokens
+const generateAccessAndRefreshTokens = async(userId) =>{
+   try{
+      const user = await User.findById(userId)
+      // we get these methods from user model
+      const accessToken = user.generateAccessToken()
+      const refreshToken = user.generateRefreshToken()
+
+      // in our user model, we have a property name refreshToken, it will have string as value. 
+      //We will generate a refresh token here, and assign that value to the that refreshToken properties in user model
+      user.refreshToken = refreshToken
+      // we get this save() method from mongodb
+      // when we run save, the whole model will be retriggered, and we've put "required" in password property in model
+      //to make sure it doesn't check for that when we use the save(), we make that validation check false
+
+      await user.save({validateBeforeSave: false})
+
+      return {accessToken, refreshToken}
+   }
+   catch(error){
+throw new ApiError(500, "Something went wrong while generating refresh and access token")
+   }
+}
+
 const registerUser = asyncHandler(async (req, res) => {
    /*
    ALGORITHM FOR REGISTER USER
@@ -135,6 +160,16 @@ const loginUser = asyncHandler(async(req,res)=>{
   if (!isPasswordValid) {
      throw new ApiError(401, "Invalid user credentials")
   }
+
+  //5. Generate tokens 
+
+  // now finally generating token after every check it done
+  //this function will return access and refresh token, so we destructure it
+  const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
+
+  //6. sending through cookie
+  // now we decide what information to user. we'll filter out these two
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
 })
 
