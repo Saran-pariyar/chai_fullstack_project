@@ -99,8 +99,45 @@ return res.status(201).json(
 
 })
 
+// login
+const loginUser = asyncHandler(async(req,res)=>{
+//steps
+// 1 get data from req.body
+// 2 check using username or email
+// 3 find the user
+// 4 password check
+// 5 generate access and refresh token
+// 6 send cookie
 
 
+  // 1
+  const { email, username, password } = req.body
 
-export { registerUser }
+  // if we don't get either username or email 
+  if (!username || !email) {
+     throw new ApiError(400, "username or password is required")
+  }
+
+  //checking 
+  // we use $or operator given my Mongodb, now it check from username and email
+  const user = await User.findOne({
+     $or: [{ username }, { email }]
+  })
+
+  if (!user) {
+     throw new ApiError(404, "User does not exist")
+  }
+
+  // see the user.model.js, we've added the method to check password.
+  // we got this argument password from req.body
+  const isPasswordValid = await user.isPasswordCorrect(password)
+
+  if (!isPasswordValid) {
+     throw new ApiError(401, "Invalid user credentials")
+  }
+
+})
+
+export { registerUser,
+loginUser }
 

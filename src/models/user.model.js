@@ -71,6 +71,10 @@ userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
 }
 
+// we can just use access token too but using 2 token is a modern approach
+// Access token are expired in short time 
+// Refresh token are expired in long time 
+
 userSchema.methods.generateAccessToken = function () {
 
     jwt.sign({
