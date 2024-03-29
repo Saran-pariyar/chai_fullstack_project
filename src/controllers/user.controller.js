@@ -171,6 +171,28 @@ const loginUser = asyncHandler(async(req,res)=>{
   // now we decide what information to user. we'll filter out these two
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
+  // when we send cookie, we have to design some options
+  // if we cookie httpOnly and secure true, it will only be modified through server and not from frontend
+  const options = {
+   httpOnly: true,
+   secure: true
+  }
+
+  //now creating cookie and sending json response after creating cookie
+  return res.status(200)
+      .cookie("accessToken",accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+         new ApiResponse(
+            200,
+            {
+               user: loggedInUser, accessToken, refreshToken
+
+            },
+            "User logged In Successfully"
+         )
+      )
+
 })
 
 export { registerUser,
