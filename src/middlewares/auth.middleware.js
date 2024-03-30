@@ -1,8 +1,8 @@
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import pkg from 'jsonwebtoken';
-const { jwt } = pkg;
+import jwt from "jsonwebtoken";
+
 
 // this middleware checks if we're authenticated or not
 export const verifyJWT = asyncHandler(async (req, res, next) => {

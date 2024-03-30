@@ -8,9 +8,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 //creating function to generate tokens
 const generateAccessAndRefreshTokens = async (userId) => {
    try {
-      console.log("inside generate function");
-      // console.log(User);
+      
       const user = await User.findById(userId)
+      
       // we get these methods from user model
       const accessToken = user.generateAccessToken()
       const refreshToken = user.generateRefreshToken()
@@ -27,6 +27,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
       return { accessToken, refreshToken }
    }
    catch (error) {
+      
       throw new ApiError(500, "Something went wrong while generating refresh and access token")
    }
 }
@@ -139,7 +140,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
    // 1
    const { email, username, password } = req.body
-
+console.log(email);
    // if we don't get either username or email 
    if (!(username || email)) {
       throw new ApiError(400, "username or password is required")
