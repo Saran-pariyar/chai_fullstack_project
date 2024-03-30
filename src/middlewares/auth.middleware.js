@@ -1,7 +1,8 @@
-import { User } from "../models/user.model";
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/asyncHandler";
-import { Jwt as jwt } from "jsonwebtoken";
+import { User } from "../models/user.model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import pkg from 'jsonwebtoken';
+const { jwt } = pkg;
 
 // this middleware checks if we're authenticated or not
 export const verifyJWT = asyncHandler(async (req, res, next) => {
@@ -15,7 +16,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         // if we're logged In, we will have this token in cookie, so we're checking that
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "")
 
-        // if token dones'doesn't exist
+        // if token doesn't exist
         if (!token) {
             throw new ApiError(401, 'Unauthorized request')
 
