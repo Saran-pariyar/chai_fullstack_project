@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 
 //creating function to generate tokens
@@ -223,6 +224,19 @@ const logoutUser = asyncHandler(async (req, res) => {
       .clearCookie("accessToken", options)
       .clearCookie("refreshToken", options)
       .json(new ApiResponse(200, {}, "User logged Out"))
+})
+
+const refreshAccessToken = asyncHandler(async(req, res)=>{
+// we refresh our refreshToken from here, first we'll get the token from cookie
+// the second one is for mobile
+const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+if(!incomingRefreshToken){
+   throw new ApiError(401, "unauthorized request")
+}
+
+jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+
 })
 
 export {
