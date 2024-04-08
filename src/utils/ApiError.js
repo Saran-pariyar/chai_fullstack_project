@@ -1,4 +1,5 @@
 // we create error message class so that we can send errors message more better way
+// this API error is API response but we're sending a proper error message
 
 class ApiError extends Error {
     constructor(
