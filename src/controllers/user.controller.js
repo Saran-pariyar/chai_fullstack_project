@@ -9,9 +9,9 @@ import jwt from "jsonwebtoken";
 //creating function to generate tokens
 const generateAccessAndRefreshTokens = async (userId) => {
    try {
-      
+
       const user = await User.findById(userId)
-      
+
       // we get these methods from user model
       const accessToken = user.generateAccessToken()
       const refreshToken = user.generateRefreshToken()
@@ -28,7 +28,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
       return { accessToken, refreshToken }
    }
    catch (error) {
-      
+
       throw new ApiError(500, "Something went wrong while generating refresh and access token")
    }
 }
@@ -141,7 +141,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
    // 1
    const { email, username, password } = req.body
-console.log(email);
+   console.log(email);
    // if we don't get either username or email 
    if (!(username || email)) {
       throw new ApiError(400, "username or password is required")
@@ -226,59 +226,95 @@ const logoutUser = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
-const refreshAccessToken = asyncHandler(async(req, res)=>{
-// we refresh our refreshToken from here, first we'll get the token from cookie
-// the second one is for mobile
-const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+const refreshAccessToken = asyncHandler(async (req, res) => {
+   // we refresh our refreshToken from here, first we'll get the token from cookie
+   // the second one is for mobile
+   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-// if we don't get incoming refresh token
-if(!incomingRefreshToken){
-   throw new ApiError(401, "unauthorized request")
-}
+   // if we don't get incoming refresh token
+   if (!incomingRefreshToken) {
+      throw new ApiError(401, "unauthorized request")
+   }
 
 
-// jwt.verify decodes the token to extract the header and payload (data) 
-try {
-   const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
-   
-   const user = await User.findById(decodedToken?._id)
-   
-   // if there is no user of that ID
-   if(!user){
-      throw new ApiError(401, "Invalid Refresh Token")
-   }
-   
-   
-   if(incomingRefreshToken !== user?.refreshToken){
-      throw new ApiError(401, "Refresh token is expired or used")
-   }
-   
-   //now that all checks are passed, we'll generate a new token and give it
-   
-   const options = {
-      httpOnly: true,
-      secure: true
-   }
-   // we're using database too so it will take some time
-   const {accessToken, newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
-   
-   return res.status(200).cookie("accessToken", accessToken, options ).cookie("refreshToken", newRefreshToken, options).json(
-      new ApiResponse(
-         200,
-         {accessToken, refreshToken: newRefreshToken},
-         "Access token refreshed"
+   // jwt.verify decodes the token to extract the header and payload (data) 
+   try {
+      const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+
+      const user = await User.findById(decodedToken?._id)
+
+      // if there is no user of that ID
+      if (!user) {
+         throw new ApiError(401, "Invalid Refresh Token")
+      }
+
+
+      if (incomingRefreshToken !== user?.refreshToken) {
+         throw new ApiError(401, "Refresh token is expired or used")
+      }
+
+      //now that all checks are passed, we'll generate a new token and give it
+
+      const options = {
+         httpOnly: true,
+         secure: true
+      }
+      // we're using database too so it will take some time
+      const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
+
+      return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", newRefreshToken, options).json(
+         new ApiResponse(
+            200,
+            { accessToken, refreshToken: newRefreshToken },
+            "Access token refreshed"
+         )
       )
-   )
-} catch (error) {
-   throw new ApiError(401, error?.message || "Invalid refresh token")
-}
+   } catch (error) {
+      throw new ApiError(401, error?.message || "Invalid refresh token")
+   }
 
+})
+
+// 
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+
+   // we will be receiving old and new password from user when they send request to change password with form data
+   const { oldPassword, newPassword } = req.body;
+   // you can see in auth middleware, have user data in req.user (req.user = user) , now we're using it's Id to find the matching document with same id in DB
+   const user = await User.findById(req.user?.id);
+
+   const isPasswordCorrect = user.isPasswordCorrect(oldPassword);
+
+   if (!isPasswordCorrect) {
+      throw new ApiError(400, "Invalid old password")
+   }
+
+   // is old password is true
+   // when you change this password, in user.model.js, you can see inside userSchema.pre(), we say modify the password into hash if it's not modified and is normal and now the new password will be modified too
+   user.password = newPassword;
+
+   // now we use the save method to save the changes to database. We don't want other validations so we make validation false 
+   // if we're working with db, use async await
+   await user.save({ validateBeforeSave: false })
+
+   return res.status(200)
+      .json(new ApiResponse(200, {}, "Password changed successfully"))
+})
+// we can get current user easily, we've injected all user detail in req.user
+// now getting current user
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+   return res
+      .status(200)
+      .json(200, req.user, "Current user fetched successfully")
 })
 
 export {
    registerUser,
-   loginUser, 
+   loginUser,
    logoutUser,
-   refreshAccessToken
+   refreshAccessToken,
+   changeCurrentPassword,
+   getCurrentUser
 }
 
