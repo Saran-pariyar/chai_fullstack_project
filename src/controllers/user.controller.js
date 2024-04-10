@@ -309,6 +309,17 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       .json(200, req.user, "Current user fetched successfully")
 })
 
+// note: if you want to update something make different controller for it. It's better way
+const updateAccountDetails = asyncHandler(async (req, res) => {
+   const { fullName, email } = req.body
+   if (!fullName || !email) {
+      throw new ApiError(400, "All fields are required")
+   }
+   User.findByIdAndUpdate(req.user?.id,
+      {},
+      { new: true })
+})
+
 export {
    registerUser,
    loginUser,
