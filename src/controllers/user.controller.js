@@ -281,7 +281,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
    // we will be receiving old and new password from user when they send request to change password with form data
    const { oldPassword, newPassword } = req.body;
    // you can see in auth middleware, have user data in req.user (req.user = user) , now we're using it's Id to find the matching document with same id in DB
-   const user = await User.findById(req.user?.id);
+   const user = await User.findById(req.user?._id);
 
    const isPasswordCorrect = user.isPasswordCorrect(oldPassword);
 
@@ -315,9 +315,23 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
    if (!fullName || !email) {
       throw new ApiError(400, "All fields are required")
    }
-   User.findByIdAndUpdate(req.user?.id,
-      {},
-      { new: true })
+   const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+         $set: {
+            fullName,
+            email: email
+         }
+      },
+      // if you make it true, it will return result after update
+      { new: true }
+      // as we said, it will return updated result, we don't want password to show
+   ).select("-password")
+
+   return res.
+      status(200)
+      .json(new ApiResponse(200, user, "Account details updated successfully"))
+
 })
 
 export {
@@ -326,6 +340,7 @@ export {
    logoutUser,
    refreshAccessToken,
    changeCurrentPassword,
-   getCurrentUser
+   getCurrentUser,
+   updateAccountDetails
 }
 
