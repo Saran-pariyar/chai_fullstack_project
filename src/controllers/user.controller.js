@@ -411,6 +411,45 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
          $match: {
             username: username?.toLowerCase()
          }
+      },
+      //pipeline
+      {
+         //it's for finding subscribers
+         $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "channels",
+            as: "subscribers"
+         }
+      },
+      //pipeline
+      {
+         //for finding ones we've subscribed
+         $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "subscriber",
+            as: "subscribedTo"
+         }
+      },
+      //pipeline
+      {
+         $addFields: {
+            subscribersCount: {
+               $size: "$subscribers"
+            },
+            channelSubscribedToCount: {
+               $size: "$subscribedTo"
+            },
+            isSubscribed: {
+               $cond: {
+                  // this is like if-else condition. We can use this true or false to show in frontend button whether to show "subscribed" or "subscribe"
+                  if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                  then: true,
+                  else: false
+               }
+            }
+         }
       }
    ])
 })
