@@ -450,8 +450,35 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                }
             }
          }
+      },
+      // pipeline
+      {
+         // $project is like a filter for your data. It lets you control which fields from your documents you want to see in the output.
+         $project: {
+            //These are the fields that are being projected or selected to include in the output documents.
+            fullName: 1,
+            username: 1,
+            subscribersCount: 1,
+            channelsSubscribedToCount: 1,
+            isSubscribed: 1,
+            avatar: 1,
+            coverImage: 1,
+            email: 1
+         }
       }
    ])
+
+   // if we don't have/find any channel
+   if (!channel?.length) {
+      throw new ApiError(404, "channel does not exists")
+   }
+
+   // if there if channel, to make it easier for frontend devs, we will send them channel data directly which is in array[0] instead of whole array
+   return res
+      .status(200)
+      .json(
+         new ApiResponse(200, channel[0], "User channel fetched successfully")
+      )
 })
 
 export {
