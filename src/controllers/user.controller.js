@@ -204,8 +204,9 @@ const logoutUser = asyncHandler(async (req, res) => {
       // we get this req.user from auth.middleware
       req.user._id,
       {
-         $set: {
-            refreshToken: undefined
+         // $unset removes the field. We have selected refreshToken to remove from document
+         $unset: {
+            refreshToken: 1
          }
       },
       {
