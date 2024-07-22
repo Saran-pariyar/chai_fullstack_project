@@ -310,6 +310,27 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       .json(200, req.user, "Current user fetched successfully")
 })
 
+// Controller to get all users with the name "gon"
+const getUsersWithNameGon = asyncHandler(async (req, res) => {
+   try {
+      // Query the database for users with the name "gon"
+      const users = await User.find({ username: "Gon" });
+
+      // Check if any users were found
+      if (!users.length) {
+         throw new ApiError(404, "No users found with the name 'gon'");
+      }
+
+      // Return the list of users
+      return res.status(200).json(new ApiResponse(200, users, "Users fetched successfully"));
+   } catch (error) {
+      // Handle errors
+      throw new ApiError(500, error.message || "Something went wrong while fetching users");
+   }
+});
+
+
+
 // note: if you want to update something make different controller for it. It's better way
 const updateAccountDetails = asyncHandler(async (req, res) => {
    const { fullName, email } = req.body
@@ -553,6 +574,7 @@ export {
    updateUserAvatar,
    updateUserCoverImage,
    getUserChannelProfile,
-   getWatchHistory
+   getWatchHistory,
+   getUsersWithNameGon
 }
 
